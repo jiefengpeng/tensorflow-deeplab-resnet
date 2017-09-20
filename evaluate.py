@@ -19,7 +19,7 @@ from deeplab_resnet import DeepLabResNetModel, ImageReader, prepare_label
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
-DATA_DIRECTORY = '/home/VOCdevkit'
+DATA_DIRECTORY = '/home/pengjf/Dataset/VOC2012'
 DATA_LIST_PATH = './dataset/val.txt'
 IGNORE_LABEL = 255
 NUM_CLASSES = 21

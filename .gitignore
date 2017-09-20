@@ -8,3 +8,6 @@ build
 
 # My configurations:
 *.ckpt
+*.jf
+/snapshots/
+/caffe_model/

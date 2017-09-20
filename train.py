@@ -20,7 +20,7 @@ from deeplab_resnet import DeepLabResNetModel, ImageReader, decode_labels, inv_p
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
-BATCH_SIZE = 10
+BATCH_SIZE = 1
 DATA_DIRECTORY = '/home/pengjf/Dataset/VOC2012'
 DATA_LIST_PATH = './dataset/train.txt'
 IGNORE_LABEL = 255
@@ -32,7 +32,7 @@ NUM_STEPS = 20001
 POWER = 0.9
 RANDOM_SEED = 1234
 RESTORE_FROM = None #'./deeplab_resnet.ckpt'
-SAVE_NUM_IMAGES = 2
+SAVE_NUM_IMAGES = 1
 SAVE_PRED_EVERY = 1000
 SNAPSHOT_DIR = './snapshots/'
 WEIGHT_DECAY = 0.0005
@@ -176,6 +176,12 @@ def main():
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=prediction, labels=gt)
     l2_losses = [args.weight_decay * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'weights' in v.name]
     reduced_loss = tf.reduce_mean(loss) + tf.add_n(l2_losses)
+
+    # Scalar summary.
+    loss_summary_loss = tf.summary.scalar("loss", tf.reduce_mean(loss))
+    loss_summary_l2_losses = tf.summary.scalar("l2_losses", tf.add_n(l2_losses))
+    loss_summary_reduced_loss = tf.summary.scalar("reduced_loss", reduced_loss)
+    loss_summary = tf.summary.merge([loss_summary_loss, loss_summary_l2_losses, loss_summary_reduced_loss])
     
     # Processed predictions: for visualisation.
     raw_output_up = tf.image.resize_bilinear(raw_output, tf.shape(image_batch)[1:3,])
@@ -190,8 +196,8 @@ def main():
     total_summary = tf.summary.image('images', 
                                      tf.concat(axis=2, values=[images_summary, labels_summary, preds_summary]), 
                                      max_outputs=args.save_num_images) # Concatenate row-wise.
-    summary_writer = tf.summary.FileWriter(args.snapshot_dir,
-                                           graph=tf.get_default_graph())
+    snapshot_dir = os.path.join(args.snapshot_dir, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    summary_writer = tf.summary.FileWriter(snapshot_dir, graph=tf.get_default_graph())
    
     # Define loss and optimisation parameters.
     base_lr = tf.constant(args.learning_rate)
@@ -239,11 +245,15 @@ def main():
         feed_dict = { step_ph : step }
         
         if step % args.save_pred_every == 0:
-            loss_value, images, labels, preds, summary, _ = sess.run([reduced_loss, image_batch, label_batch, pred, total_summary, train_op], feed_dict=feed_dict)
+            loss_value, images, labels, preds, image_summary, summary, _ = sess.run(
+                [reduced_loss, image_batch, label_batch, pred, total_summary, loss_summary, train_op],
+                feed_dict=feed_dict)
+            summary_writer.add_summary(image_summary, step)
             summary_writer.add_summary(summary, step)
-            save(saver, sess, args.snapshot_dir, step)
+            save(saver, sess, snapshot_dir, step)
         else:
-            loss_value, _ = sess.run([reduced_loss, train_op], feed_dict=feed_dict)
+            loss_value, summary, _ = sess.run([reduced_loss, loss_summary, train_op], feed_dict=feed_dict)
+            summary_writer.add_summary(summary, step)
         duration = time.time() - start_time
         print('step {:d} \t loss = {:.3f}, ({:.3f} sec/step)'.format(step, loss_value, duration))
     coord.request_stop()
