@@ -28,12 +28,12 @@ INPUT_SIZE = '321,321'
 LEARNING_RATE = 2.5e-4
 MOMENTUM = 0.9
 NUM_CLASSES = 21
-NUM_STEPS = 20001
+NUM_STEPS = 1464*20 
 POWER = 0.9
 RANDOM_SEED = 1234
-RESTORE_FROM = None #'./deeplab_resnet.ckpt'
+RESTORE_FROM = '/home/pengjf/tensorflow-deeplab-resnet/caffe_model/Kaiming_101/model.ckpt' #'./deeplab_resnet.ckpt'
 SAVE_NUM_IMAGES = 1
-SAVE_PRED_EVERY = 1000
+SAVE_PRED_EVERY = 1463
 SNAPSHOT_DIR = './snapshots/'
 WEIGHT_DECAY = 0.0005
 
