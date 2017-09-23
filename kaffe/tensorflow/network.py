@@ -102,7 +102,7 @@ class Network(object):
     def make_var_w(self, name, shape):
         return tf.get_variable(name, shape,
             trainable=self.trainable,
-            initializer=tf.contrib.layers.xavier_initializer_conv2d()
+            initializer=tf.truncated_normal_initializer(stddev=0.01)
             )
     def make_var_b(self, name, shape):
         return tf.get_variable(name, shape,
