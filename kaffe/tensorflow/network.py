@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from .my_bn import my_batch_norm
 slim = tf.contrib.slim
 
 DEFAULT_PADDING = 'SAME'
@@ -280,6 +281,19 @@ class Network(object):
                 updates_collections=None,
                 scale=scale,
                 scope=scope)
+            return output
+
+    @layer
+    def my_batch_normalization(self, input, name, is_training, activation_fn=None, scale=True, is_first=None):
+        with tf.variable_scope(name) as scope:
+            output = my_batch_norm(
+                input,
+                activation_fn=activation_fn,
+                is_training=is_training,
+                updates_collections=None,
+                scale=scale,
+                scope=scope,
+                is_first=is_first)
             return output
 
     @layer
