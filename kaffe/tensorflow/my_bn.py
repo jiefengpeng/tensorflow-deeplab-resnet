@@ -327,13 +327,19 @@ def my_batch_norm(
         pre_variance_ = tf.image.resize_images(pre_variance_, tf.constant([resize_channel, 1]))
         pre_mean_ = tf.squeeze(pre_mean_)
         pre_variance_ = tf.squeeze(pre_variance_)
-        R1 = pre_shape[1] * pre_shape[2]
-        R2 = inputs_shape[1].value * inputs_shape[2].value
+        R1 = tf.to_float(pre_shape[1] * pre_shape[2])
+        R2 = tf.to_float(inputs_shape[1].value * inputs_shape[2].value)
         R = R1 + R2
-        mean = 0.1 * pre_mean_ + 0.9 * mean
-        variance = 0.1 * pre_variance_ + 0.9 * variance
-        # mean = R1/R * pre_mean_ + R2/R * mean
-        # variance = R1/R * pre_variance_ + R2/R * variance
+        C = R1 * R2 * tf.square(mean - pre_mean_) / tf.square(R)
+        flag = tf.reduce_mean(pre_variance_ / variance)
+        keep_fn = lambda: (mean, variance)
+        def pre_updates():
+          mean_ = 0.1 * pre_mean_ + 0.9 * mean
+          variance_ = 0.1 * pre_variance_ + 0.9 * variance + 0.09 * tf.square(mean - pre_mean_)
+          return mean_, variance_
+        mean, variance = tf.cond(flag < 100, pre_updates, keep_fn) 
+        #  mean = R1/R * pre_mean_ + R2/R * mean
+        #  variance = R1/R * pre_variance_ + R2/R * variance + C
 
 
       moving_vars_fn = lambda: (moving_mean, moving_variance)
